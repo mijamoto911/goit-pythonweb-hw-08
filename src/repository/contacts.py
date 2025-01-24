@@ -1,6 +1,6 @@
 from typing import List
 
-from sqlalchemy import select, or_, func, extract, and_
+from sqlalchemy import select, or_, func, extract, and_, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from datetime import timedelta
@@ -71,7 +71,7 @@ class ContactRepository:
 
     async def upcoming_birthdays(self, days: int) -> List[Contact]:
         today = func.current_date()
-        future_date = func.current_date() + timedelta(days=days)
+        future_date = today + text(f"INTERVAL '{days} DAYS'")
         stmt = select(Contact).filter(
             and_(
                 or_(
@@ -79,8 +79,8 @@ class ContactRepository:
                     extract("month", Contact.birthday) == extract("month", future_date),
                 ),
                 or_(
-                    extract("day", Contact.birthday) >= extract("days", today),
-                    extract("day", Contact.birthday) <= extract("days", future_date),
+                    extract("day", Contact.birthday) >= extract("day", today),
+                    extract("day", Contact.birthday) <= extract("day", future_date),
                 ),
             )
         )
